@@ -1,0 +1,99 @@
+import { test, expect } from '@playwright/test';
+import { seedWorkspace } from '../../src/task-state.ts';
+import { randomUUID } from 'node:crypto';
+test.beforeEach(async ({page})=>{
+ const state=seedWorkspace();state.tasks.forEach(t=>t.id=randomUUID());
+ await page.route('**/api/**',async route=>{
+  const request=route.request(),path=new URL(request.url()).pathname,method=request.method();
+  let result;
+  if(path==='/api/workspace')result=state;
+  else if(path==='/api/projects'){result=request.postDataJSON();state.projects.push(result);}
+  else if(path==='/api/tasks'){result={...request.postDataJSON(),id:randomUUID()};state.tasks.push(result);}
+  else{const id=path.split('/').pop();if(method==='DELETE'){state.tasks=state.tasks.filter(t=>t.id!==id);result={deleted:true};}else{result={...state.tasks.find(t=>t.id===id),...request.postDataJSON()};state.tasks=state.tasks.map(t=>t.id===id?result:t);}}
+  await route.fulfill({status:200,json:result});
+ });
+});
+test('tasks persist, can be completed and deleted with undo, and projects filter correctly', async ({ page }) => {
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');
+ await expect(page.getByRole('heading',{name:'Make room for great work.'})).toBeVisible();
+ await page.screenshot({path:'/private/tmp/daymark-react-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:'New task',exact:true}).click();
+ const dialog=page.locator('dialog[open]');
+ await dialog.getByLabel('Task name').fill('Deploy my React dashboard');
+ await dialog.getByLabel('Description').fill('Verify this task stays saved after refreshing.');
+ await dialog.getByLabel('Priority').selectOption('High');
+ await dialog.getByRole('button',{name:'Create task',exact:true}).click();
+ await expect(dialog).toHaveCount(0);
+ await page.reload();
+ await expect(page.getByRole('button',{name:'Deploy my React dashboard',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Complete Deploy my React dashboard',exact:true}).click();
+ await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Completed/}).click();
+ await expect(page.getByRole('button',{name:'Deploy my React dashboard',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Deploy my React dashboard',exact:true}).click();
+ await dialog.getByRole('button',{name:'Delete',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Deploy my React dashboard',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'Undo',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Deploy my React dashboard',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Create project',exact:true}).click();
+ await dialog.getByLabel('Project name').fill('My new project');
+ await dialog.getByRole('button',{name:'Create project',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'A little room for something new'})).toBeVisible();
+ await page.getByRole('button',{name:'New task',exact:true}).click();
+ await dialog.getByLabel('Task name').fill('Project milestone');
+ await expect(dialog.getByLabel('Project',{exact:true})).toHaveValue('My new project');
+ await dialog.getByRole('button',{name:'Create task',exact:true}).click();
+ await page.getByRole('button',{name:'List',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Project milestone To do',exact:true})).toBeVisible();
+ await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:'My calendar'}).click();
+ await expect(page.getByRole('heading',{name:'On the horizon'})).toBeVisible();
+ await page.getByRole('searchbox',{name:'Search tasks'}).fill('no matching task');
+ await expect(page.getByRole('heading',{name:'No tasks found'})).toBeVisible();
+ expect(errors).toEqual([]);
+});
+test('mobile navigation, task editing, and workspace export work without page overflow', async ({ page })=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/');
+ await expect(page.getByRole('button',{name:'New task',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+ await page.screenshot({path:'/private/tmp/daymark-react-mobile.png',fullPage:true});
+ await page.getByRole('button',{name:'Open navigation'}).click();
+ await page.getByRole('navigation',{name:'Projects'}).getByRole('button',{name:'Personal',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Personal',exact:true}).first()).toBeVisible();
+ await page.getByRole('button',{name:'Make time for a little learning',exact:true}).click();
+ const dialog=page.locator('dialog[open]');
+ await dialog.getByLabel('Status',{exact:true}).selectOption('done');
+ await dialog.getByRole('button',{name:'Save changes'}).click();
+ await page.getByRole('button',{name:'Open navigation'}).click();
+ const download=page.waitForEvent('download');
+ await page.getByRole('button',{name:'Export workspace'}).click();
+ expect((await download).suggestedFilename()).toMatch(/^daymark-.*\.json$/);
+});
+
+test('database failures are visible and failed writes do not change the board',async({page})=>{
+ await page.goto('/');
+ await expect(page.getByText('Connected to MySQL',{exact:true})).toBeVisible();
+ await page.route('**/api/tasks',route=>route.fulfill({status:503,json:{error:'Database unavailable. Try again.'}}));
+ await page.getByRole('button',{name:'New task',exact:true}).click();
+ const dialog=page.locator('dialog[open]');
+ await dialog.getByLabel('Task name').fill('Must not appear as saved');
+ await dialog.getByRole('button',{name:'Create task',exact:true}).click();
+ await expect(dialog.getByRole('alert')).toHaveText('Database unavailable. Try again.');
+ await expect(dialog).toBeVisible();
+ await expect(page.getByRole('button',{name:'Must not appear as saved',exact:true})).toHaveCount(0);
+});
+
+test('dragging a task updates its status and failed initial loading can recover',async({page})=>{
+ await page.route('**/api/workspace',route=>route.fulfill({status:503,json:{error:'Database unavailable'}}),{times:1});
+ await page.goto('/');
+ await expect(page.getByRole('button',{name:'New task',exact:true})).toBeDisabled();
+ await expect(page.getByRole('alert')).toContainText('Database unavailable');
+ await page.getByRole('button',{name:'Reconnect / refresh'}).click();
+ await expect(page.getByText('Connected to MySQL',{exact:true})).toBeVisible();
+ const source=page.locator('.task-card').filter({has:page.getByRole('button',{name:'Explore homepage directions',exact:true})});
+ const target=page.locator('.board-column').filter({has:page.getByRole('heading',{name:'In progress',exact:true})});
+ await source.dragTo(target, {sourcePosition:{x:12,y:12}, targetPosition:{x:25,y:15}});
+ await expect(target.getByRole('button',{name:'Explore homepage directions',exact:true})).toBeVisible();
+ await page.reload();
+ await expect(target.getByRole('button',{name:'Explore homepage directions',exact:true})).toBeVisible();
+});

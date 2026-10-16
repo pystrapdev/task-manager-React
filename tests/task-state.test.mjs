@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { seedWorkspace, parseWorkspace, filterTasks, dateKey } from '../src/task-state.ts';
+test('seed dates cross month boundaries using local calendar dates',()=>{const state=seedWorkspace(new Date(2026,0,31,23));assert.equal(state.tasks[1].due,'2026-02-01');assert.equal(state.tasks[6].due,'2026-01-30');assert.equal(dateKey(new Date(2026,0,1)),'2026-01-01');});
+test('saved edits and empty task lists survive JSON persistence',()=>{const state=seedWorkspace();state.tasks[0].title='A saved change';state.tasks[0].status='done';assert.deepEqual(parseWorkspace(JSON.stringify(state)),state);state.tasks=[];assert.deepEqual(parseWorkspace(JSON.stringify(state)),state);});
+test('invalid or incompatible storage is rejected',()=>{for(const raw of ['null','oops','{}','{"projects":[],"tasks":[]}'])assert.equal(parseWorkspace(raw),null);const state=seedWorkspace();state.tasks[0].status='missing';assert.equal(parseWorkspace(JSON.stringify(state)),null);});
+test('duplicate IDs and unknown project references cannot enter saved state',()=>{const state=seedWorkspace();state.tasks[1].id=state.tasks[0].id;assert.equal(parseWorkspace(JSON.stringify(state)),null);const other=seedWorkspace();other.tasks[0].project='Missing';assert.equal(parseWorkspace(JSON.stringify(other)),null);});
+test('search matches descriptions and combines project and priority filters',()=>{const {tasks}=seedWorkspace();assert.equal(filterTasks(tasks,'  REFERENCES  ','Website redesign','High').length,1);assert.equal(filterTasks(tasks,'references','Personal','').length,0);assert.equal(filterTasks(tasks,'','Product launch','Medium').length,3);assert.deepEqual(filterTasks(tasks,'','',''),tasks);});
