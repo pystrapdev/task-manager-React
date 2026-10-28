@@ -22,7 +22,7 @@ export default function AuthPage(){
    if(!active)return;
    setAuthenticated(auth.authenticated);
    setReady(true);
-   if(auth.authenticated)window.location.replace('/forge');
+    if(auth.authenticated)window.location.replace('/workspace');
   }).catch(reason=>{if(active){setReady(true);setError(errorMessage(reason));}});
   return()=>{active=false;};
  },[]);
@@ -37,7 +37,7 @@ export default function AuthPage(){
  }
 
  return <main className="forge-page auth-page">
-  <header className="forge-page-header"><a href="/" className="brand"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a><a className="forge-back-link" href="/">Back to Daymark</a></header>
+    <header className="forge-page-header"><a href="/" className="brand"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a><a className="forge-back-link" href="/workspace">Open workspace</a></header>
   <section className="auth-content" aria-labelledby="auth-title">
    <div className="auth-copy"><p className="eyebrow">A CLEAR SPACE FOR YOUR WORK</p><h1>Make room for meaningful work.</h1><p>Sign in to keep your Daymark workspace close, wherever the day takes you.</p><div className="auth-art" aria-hidden="true"><span className="auth-art-line line-one"/><span className="auth-art-line line-two"/><span className="auth-art-dot"/></div></div>
    <div className="auth-panel">

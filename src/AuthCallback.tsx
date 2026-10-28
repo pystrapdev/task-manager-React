@@ -17,5 +17,5 @@ export default function AuthCallback(){
   }).catch(reason=>{if(active){setError(errorMessage(reason));setMessage('Sign-in needs attention.');}});
   return()=>{active=false;};
  },[]);
- return <main className="forge-page"><section className="forge-content forge-callback" aria-labelledby="callback-title"><a href="/" className="brand"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a><p className="eyebrow">CWEB FORGE</p><h1 id="callback-title">Authentication callback</h1><p className="forge-intro" role="status">{message}</p>{error&&<p className="forge-error" role="alert">{error}</p>}<a className="button primary" href="/forge">Open Forge records</a></section></main>;
+ return <main className="forge-page"><section className="forge-content forge-callback" aria-labelledby="callback-title"><a href="/" className="brand"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a><p className="eyebrow">CWEB FORGE</p><h1 id="callback-title">Authentication callback</h1><p className="forge-intro" role="status">{message}</p>{error&&<p className="forge-error" role="alert">{error}</p>}<a className="button primary" href="/workspace">Continue to Daymark</a></section></main>;
 }

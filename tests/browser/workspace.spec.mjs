@@ -1,7 +1,19 @@
 import { test, expect } from '@playwright/test';
+const testWorkspace={projects:[{name:'Website redesign',color:'#a18cd1'},{name:'Product launch',color:'#df9d53'},{name:'Personal',color:'#6b9d91'}],tasks:[{id:'demo-1',title:'Explore homepage directions',description:'Collect a few references.',project:'Website redesign',priority:'High',due:'2026-10-28',status:'todo'},{id:'demo-2',title:'Make time for a little learning',description:'Read one chapter.',project:'Personal',priority:'Low',due:'2026-10-29',status:'todo'}]};
+async function seedWorkspace(page){await page.addInitScript(workspace=>localStorage.setItem('daymark-react-workspace',JSON.stringify(workspace)),testWorkspace);}
+async function openWorkspace(page){await seedWorkspace(page);await page.goto('/workspace');}
+
+test('home route presents Forge login and sign-up choices',async({page})=>{
+ await page.goto('/');
+ await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Log in'})).toBeVisible();
+ await page.getByRole('button',{name:'Sign up'}).click();
+ await expect(page.getByRole('heading',{name:'Create your account'})).toBeVisible();
+});
+
 test('tasks persist, can be completed and deleted with undo, and projects filter correctly', async ({ page }) => {
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('/');
+ await openWorkspace(page);
  await expect(page.getByRole('heading',{name:'Make room for great work.'})).toBeVisible();
  await page.screenshot({path:'/private/tmp/daymark-react-desktop.png',fullPage:true});
  await page.getByRole('button',{name:'New task',exact:true}).click();
@@ -39,7 +51,7 @@ test('tasks persist, can be completed and deleted with undo, and projects filter
 });
 test('mobile navigation, task editing, and workspace export work without page overflow', async ({ page })=>{
  await page.setViewportSize({width:390,height:844});
- await page.goto('/');
+ await openWorkspace(page);
  await expect(page.getByRole('button',{name:'New task',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
  await page.screenshot({path:'/private/tmp/daymark-react-mobile.png',fullPage:true});
@@ -57,8 +69,9 @@ test('mobile navigation, task editing, and workspace export work without page ov
 });
 
 test('browser storage failures are visible and failed writes do not change the board',async({page})=>{
+ await seedWorkspace(page);
  await page.addInitScript(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Storage is full.','QuotaExceededError');};});
- await page.goto('/');
+ await page.goto('/workspace');
  await page.getByRole('button',{name:'New task',exact:true}).click();
  const dialog=page.locator('dialog[open]');
  await dialog.getByLabel('Task name').fill('Must not appear as saved');
@@ -69,8 +82,8 @@ test('browser storage failures are visible and failed writes do not change the b
 });
 
 test('dragging a task updates its status and workspace reload reads browser storage',async({page})=>{
- await page.goto('/');
- await expect(page.getByRole('button',{name:'New task',exact:true})).toBeDisabled();
+ await openWorkspace(page);
+ await expect(page.getByRole('button',{name:'New task',exact:true})).toBeEnabled();
  await expect(page.getByText('Saved in this browser',{exact:true})).toBeVisible();
  const source=page.locator('.task-card').filter({has:page.getByRole('button',{name:'Explore homepage directions',exact:true})});
  const target=page.locator('.board-column').filter({has:page.getByRole('heading',{name:'In progress',exact:true})});

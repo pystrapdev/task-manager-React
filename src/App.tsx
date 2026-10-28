@@ -50,7 +50,7 @@ export default function App(){
  return <><div className="app-shell">
  {mobile&&<button className="sidebar-backdrop" aria-label="Close navigation" onClick={()=>setMobile(false)}/>}
  <aside className={'sidebar '+(mobile?'mobile-open':'')}>
- <a href="/" className="brand" aria-label="Daymark home"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a>
+ <a href="/workspace" className="brand" aria-label="Daymark home"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a>
  <div className="workspace"><div className="workspace-avatar">Y<span/></div><div><strong>Personal workspace</strong><small>Saved in this browser</small></div></div>
  <p className="nav-caption">WORKSPACE</p><nav aria-label="Main navigation"><button className={page==='overview'&&!project?'selected':''} onClick={()=>navigate('overview')}><Icon/>Overview<span className="nav-count">{workspace.tasks.length}</span></button><button className={page==='calendar'?'selected':''} onClick={()=>navigate('calendar')}><Icon name="calendar"/>My calendar</button><button className={page==='completed'?'selected':''} onClick={()=>navigate('completed')}><Icon name="circle"/>Completed<span className="nav-count muted">{done}</span></button></nav><a className="forge-nav-link" href="/forge">Forge records</a>
  <div className="nav-caption project-heading">MY PROJECTS<button disabled={disabled} className="icon-button" aria-label="Create project" onClick={openProject}><Icon name="plus"/></button></div>

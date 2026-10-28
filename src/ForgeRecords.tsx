@@ -63,7 +63,7 @@ export default function ForgeRecords(){
  }
 
  return <main className="forge-page">
-  <div className="forge-page-header"><a href="/" className="brand"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a><a className="forge-back-link" href="/">Back to Daymark</a></div>
+    <div className="forge-page-header"><a href="/workspace" className="brand"><span className="brand-mark">✳</span>daymark<span className="brand-period">.</span></a><a className="forge-back-link" href="/workspace">Back to Daymark</a></div>
   <section className="forge-content" aria-labelledby="forge-title">
    <p className="eyebrow">CWEB FORGE</p>
    <h1 id="forge-title">Records connection</h1>
