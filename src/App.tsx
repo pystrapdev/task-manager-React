@@ -1,10 +1,10 @@
 import {useEffect,useRef,useState, type ReactNode} from 'react';
 import {Icon} from './Icon';
-import {dateKey,filterTasks,parseWorkspace,seedWorkspace,type Task,type Workspace,type Status} from './task-state';
+import {dateKey,emptyWorkspace,filterTasks,parseWorkspace,type Task,type Workspace,type Status} from './task-state';
 const columns:{id:Status;label:string}[]=[{id:'todo',label:'To do'},{id:'progress',label:'In progress'},{id:'done',label:'Done'}];
 const colors=['#a18cd1','#df9d53','#6b9d91','#719bbd','#cf839b'];
 const storageKey='daymark-react-workspace';
-function readWorkspace():{workspace:Workspace;available:boolean}{try{const raw=localStorage.getItem(storageKey);if(raw){const saved=parseWorkspace(raw);if(saved)return {workspace:saved,available:true};}const workspace=seedWorkspace();localStorage.setItem(storageKey,JSON.stringify(workspace));return {workspace,available:true};}catch{return {workspace:seedWorkspace(),available:false};}}
+function readWorkspace():{workspace:Workspace;available:boolean}{try{const raw=localStorage.getItem(storageKey);if(raw){const saved=parseWorkspace(raw);if(saved)return {workspace:saved,available:true};}const workspace=emptyWorkspace();localStorage.setItem(storageKey,JSON.stringify(workspace));return {workspace,available:true};}catch{return {workspace:emptyWorkspace(),available:false};}}
 function dueLabel(value:string){if(!value)return 'No due date';if(value===dateKey(new Date()))return 'Today';const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);if(value===dateKey(tomorrow))return 'Tomorrow';return new Date(value+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});}
 function Modal({children,close,busy,label}:{children:ReactNode;close:()=>void;busy:boolean;label:string}){
  const ref=useRef<HTMLDialogElement>(null);
@@ -31,7 +31,7 @@ export default function App(){
  const color=(name:string)=>workspace.projects.find(p=>p.name===name)?.color||'#6b9d91';
  const disabled=loading||busy;
  function commitWorkspace(next:Workspace){localStorage.setItem(storageKey,JSON.stringify(next));setWorkspace(next);}
- function loadWorkspace(){if(locked.current)return;locked.current=true;setLoading(true);try{const raw=localStorage.getItem(storageKey);const saved=raw?parseWorkspace(raw):null;if(raw&&!saved)throw new Error('Saved workspace data is invalid.');setWorkspace(saved||seedWorkspace());setError('');setStorageAvailable(true);}catch(e){setError(e instanceof Error?e.message:'Unable to load saved workspace.');setStorageAvailable(false);}finally{setLoading(false);locked.current=false;}}
+ function loadWorkspace(){if(locked.current)return;locked.current=true;setLoading(true);try{const raw=localStorage.getItem(storageKey);const saved=raw?parseWorkspace(raw):null;if(raw&&!saved)throw new Error('Saved workspace data is invalid.');setWorkspace(saved||emptyWorkspace());setError('');setStorageAvailable(true);}catch(e){setError(e instanceof Error?e.message:'Unable to load saved workspace.');setStorageAvailable(false);}finally{setLoading(false);locked.current=false;}}
  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current);},[]);
  function notify(message:string,undo:Task|null=null){if(timer.current)clearTimeout(timer.current);setToast(message);setDeleted(undo);timer.current=setTimeout(()=>{setToast('');setDeleted(null);},6000);}
  function mutate(action:()=>void){if(locked.current)return;locked.current=true;setBusy(true);setError('');try{action();setStorageAvailable(true);}catch(e){setError(e instanceof Error?e.message:'Changes could not be saved in this browser.');setStorageAvailable(false);}finally{locked.current=false;setBusy(false);}}

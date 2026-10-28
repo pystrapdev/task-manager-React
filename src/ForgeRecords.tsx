@@ -19,7 +19,7 @@ export default function ForgeRecords(){
  const [authReady,setAuthReady]=useState(false);
  const [records,setRecords]=useState<Document<RecordData>[]>([]);
  const [nextCursor,setNextCursor]=useState<string|null>(null);
- const [title,setTitle]=useState('A Daymark test record');
+ const [title,setTitle]=useState('');
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');

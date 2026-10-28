@@ -36,9 +36,6 @@ export async function initializeDatabase(pool) {
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   FOREIGN KEY (project) REFERENCES daymark_projects(name)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
- for (const [name,color] of [['Website redesign','#a18cd1'],['Product launch','#df9d53'],['Personal','#6b9d91']]) {
-  await pool.execute('INSERT IGNORE INTO daymark_projects (name,color) VALUES (?,?)',[name,color]);
- }
 }
 const taskColumns = "id,title,description,project,priority,COALESCE(DATE_FORMAT(due,'%Y-%m-%d'),'') AS due,status";
 export function createRepository(pool) {
