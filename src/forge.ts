@@ -1,12 +1,14 @@
-import {ForgeClient, createForgeAuth} from '@cweb-app/forge';
+ import { ForgeClient, createForgeAuth } from '@cweb-app/forge';
 
-export const endpoint = 'https://daymark-app.forge.cweb.app/v1/';
+// Must be the endpoint of the Forge app where you registered this site's origin
+export const endpoint = 'https://daymark-react.forge.cweb.app/v1/';
 export const redirectUri = window.location.origin + '/auth/callback';
 
 export const forgeReady = createForgeAuth({
- endpoint,
- redirectUri,
+  endpoint,
+  redirectUri,
+  onLoad: 'login-required',
 }).then(auth => ({
- auth,
- forge: new ForgeClient({endpoint, token: auth.token}),
+  auth,
+  forge: new ForgeClient({ endpoint, token: auth.token }),
 }));
