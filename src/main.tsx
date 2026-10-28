@@ -6,6 +6,8 @@ const path = window.location.pathname;
 
 if (path === '/auth/callback') {
  import('./AuthCallback').then(({default: AuthCallback}) => root.render(<AuthCallback/>));
+} else if (path === '/auth') {
+ import('./AuthPage').then(({default: AuthPage}) => root.render(<AuthPage/>));
 } else if (path === '/forge') {
  import('./ForgeRecords').then(({default: ForgeRecords}) => root.render(<ForgeRecords/>));
 } else {

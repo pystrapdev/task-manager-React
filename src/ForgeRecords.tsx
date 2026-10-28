@@ -37,7 +37,7 @@ export default function ForgeRecords(){
    if(!active)return;
    setAuthenticated(auth.authenticated);
    setAuthReady(true);
-   if(!auth.authenticated)throw new Error('Forge sign-in did not complete.');
+    if(!auth.authenticated){window.location.replace('/auth');return;}
    await loadRecords();
   }).catch(reason=>{if(active)setError(errorMessage(reason));}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};

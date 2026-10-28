@@ -6,7 +6,6 @@ export const redirectUri = window.location.origin + '/auth/callback';
 export const forgeReady = createForgeAuth({
  endpoint,
  redirectUri,
- onLoad: 'login-required',
 }).then(auth => ({
  auth,
  forge: new ForgeClient({endpoint, token: auth.token}),
